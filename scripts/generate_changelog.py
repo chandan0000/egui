@@ -90,23 +90,19 @@ def fetch_pr_info(pr_number: int) -> Optional[PrInfo]:
 
 
 def get_commit_info(commit: Any) -> CommitInfo:
-    match = re.match(r"(.*) \(#(\d+)\)", commit.summary)
-    if match:
-        title = str(match.group(1))
-        pr_number = int(match.group(2))
-        return CommitInfo(hexsha=commit.hexsha, title=title, pr_number=pr_number)
-    else:
+    if not (match := re.match(r"(.*) \(#(\d+)\)", commit.summary)):
         return CommitInfo(hexsha=commit.hexsha, title=commit.summary, pr_number=None)
+    title = str(match.group(1))
+    pr_number = int(match.group(2))
+    return CommitInfo(hexsha=commit.hexsha, title=title, pr_number=pr_number)
 
 
 def remove_prefix(text, prefix):
-    if text.startswith(prefix):
-        return text[len(prefix) :]
-    return text  # or whatever
+    return text[len(prefix) :] if text.startswith(prefix) else text
 
 
 def print_section(crate: str, items: List[str]) -> None:
-    if 0 < len(items):
+    if items:
         print(f"#### {crate}")
         for line in items:
             line = remove_prefix(line, f"[{crate}] ")
@@ -176,7 +172,7 @@ def main() -> None:
 
             summary = f"{title} [#{pr_number}](https://github.com/{OWNER}/{REPO}/pull/{pr_number})"
 
-            if INCLUDE_LABELS and 0 < len(labels):
+            if INCLUDE_LABELS and len(labels) > 0:
                 summary += f" ({', '.join(labels)})"
 
             if pr_info is not None:
@@ -191,8 +187,8 @@ def main() -> None:
                     sections.setdefault(crate, []).append(summary)
                     added = True
 
-            if not added:
-                if not any(label in labels for label in ignore_labels):
+            if all(label not in labels for label in ignore_labels):
+                if not added:
                     unsorted_prs.append(summary)
 
     print()

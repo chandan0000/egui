@@ -33,14 +33,14 @@ def lint_lines(filepath, lines_in):
     lines_out = []
     prev_line = ""
 
+    # TODO: only # and /// on lines before a keyword
+
+    pattern = (
+        r"^\s*((///)|((pub(\(\w*\))? )?((impl|fn|struct|enum|union|trait)\b))).*$"
+    )
     for line_nr, line in enumerate(lines_in):
         line_nr = line_nr + 1
 
-        # TODO: only # and /// on lines before a keyword
-
-        pattern = (
-            r"^\s*((///)|((pub(\(\w*\))? )?((impl|fn|struct|enum|union|trait)\b))).*$"
-        )
         if re.match(pattern, line):
             stripped = prev_line.strip()
             last_line_was_empty = (
@@ -116,8 +116,6 @@ def test_lint():
         errors, _ = lint_lines("test.py", code.split("\n"))
         assert len(errors) > 0, f"expected this to fail:\n{code}"
 
-    pass
-
 
 def main():
     test_lint()  # Make sure we are bug free before we run!
@@ -146,7 +144,7 @@ def main():
         root_dirpath = os.path.abspath(f"{script_dirpath}/..")
         os.chdir(root_dirpath)
 
-        exclude = set(["target", "target_ra", "target_wasm"])
+        exclude = {"target", "target_ra", "target_wasm"}
         for root, dirs, files in os.walk(".", topdown=True):
             dirs[:] = [d for d in dirs if d not in exclude]
             for filename in files:
